@@ -35,12 +35,12 @@ object opt {
       */
     def printIfAny: Unit = this match {
       case Option.Some(v) => println(v)
-      case Option.None    => throw new Exception("get on empty Option")
+      case Option.None    => Option.None
     }
 
     /** реализовать метод orElse который будет возвращать другой Option, если данный пустой
       */
-    def orElse[B >: A](o: Option[B]): Option[B] = this match {
+    def orElse[B >: A](o: => Option[B]): Option[B] = this match {
       case Option.Some(v) => this
       case Option.None    => o
     }
@@ -49,14 +49,9 @@ object opt {
       */
     def zip[B >: A](o: Option[B]): Option[(A, B)] = {
 
-      this match {
-        case Option.Some(a) => {
-          o match {
-            case Option.Some(b) => Option.Some((a, b))
-            case _              => Option.None
-          }
-        }
-        case _ => Option.None
+      (this, o) match {
+        case (Option.Some(a), Option.Some(b)) => Option.Some((a, b))
+        case _                                => None
       }
 
     }
@@ -65,8 +60,8 @@ object opt {
       * в случае если исходный не пуст и предикат от значения = true
       */
     def filter(p: A => Boolean): Option[A] = this match {
-      case Option.Some(v) => if (p(v)) this else Option.None
-      case Option.None    => Option.None
+      case Option.Some(v) if p(v) => this
+      case _                      => Option.None
     }
   }
 
@@ -158,55 +153,47 @@ object list {
     /** Реализовать метод reverse который позволит заменить порядок элементов в списке на противоположный
       */
     def reverse: List[A] = {
+      import List._
       var r: List[A] = List.Nil
-      var t: List[A] = this
-      while (!t.isEmpty) {
-        r = t.head :: r
-        t = t.tail
+
+      def loop(l: List[A], acc: List[A]): List[A] = {
+        l match {
+          case List.Nil => acc
+          case h :: Nil => l.head :: acc
+          case h :: t   => loop(l.tail, l.head :: acc)
+        }
       }
-      r
-    }
-    def foreach[U](f: A => U): Unit = {
-      var t =
-        this.reverse // Не совсем ясное условие, можем ли мы ломать последвоательность на обратную, данная реализация снижает производительность
-      while (!t.isEmpty) {
-        f(t.head)
-        t = t.tail
-      }
+      loop(this, r)
     }
 
     /** Написать функцию incList котрая будет принимать список Int и возвращать список,
       * где каждый элемент будет увеличен на 1
       */
 
-    def incList(l: List[Int]): List[Int] = {
-      var a: Int = 0
-      var r: List[Int] = List.Nil
-      for (a <- l) {
-        r = a + 1 :: r
-      }
-      r
-
-    }
+    def incList(l: List[Int]): List[Int] = l.map(_ + 1)
 
     /** Написать функцию shoutString котрая будет принимать список String и возвращать список,
       * где к каждому элементу будет добавлен префикс в виде '!'
       */
-    def shoutString(l: List[String]): List[String] = {
-
-      var str: String = "";
-      var r: List[String] = List.Nil
-      for (str <- l) {
-        r = ("|" + str) :: r
-      }
-      r
-
-    }
+    def shoutString(l: List[String]): List[String] = l.map("!" + _)
 
     /** Реализовать метод для списка который будет применять некую ф-цию к элементам данного списка
       */
     def map[B](f: A => B): List[B] = {
-      if (this eq List.Nil) List.Nil
+      import List._
+      var a: List[B] = List.Nil
+
+      def loop(l: List[A], acc: List[B], f: A => B): List[B] = {
+        l match {
+          case List.Nil => acc
+          case h :: Nil => f(l.head) :: acc
+          case h :: t   => loop(l.tail, f(l.head) :: acc, f)
+        }
+      }
+      loop(this.reverse, a, f)
+
+    }
+    /*if (this eq List.Nil) List.Nil
       else {
         val h: B = f(head)
         var t: List[B] = List(h)
@@ -217,8 +204,8 @@ object list {
           rest = rest.tail
         }
         t
-      }
-    }
+      }*/
+
   }
 
   object List {
