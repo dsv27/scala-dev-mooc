@@ -425,5 +425,4 @@ object subtyping {
   }
 
 
-
 }

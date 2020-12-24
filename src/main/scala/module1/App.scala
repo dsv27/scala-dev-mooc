@@ -1,10 +1,5 @@
 package module1
 
-import module1.list.List
-
-
-
-
 object App {
 
 

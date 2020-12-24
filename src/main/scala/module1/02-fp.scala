@@ -128,6 +128,8 @@ import scala.annotation.tailrec
        }
       loop(this, new StringBuilder()).toString()
      }
+
+     def map[B](f: A => B): List[B] = ???
    }
 
    object List{
