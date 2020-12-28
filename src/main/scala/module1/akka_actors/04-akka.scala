@@ -1,12 +1,13 @@
 package module1.akka_actors
 
-import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.scaladsl.AbstractBehavior
+import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior, MessageAdaptionFailure, PostStop, PreRestart, SpawnProtocol, SupervisorStrategy}
 import module1.akka_actors.intro_actors.AccountHandler.AccountResponseProtocol
 import module1.akka_actors.intro_actors.actors_communication.AccountDispatcher.AccountDispatcherResponseProtocol
 import module1.akka_actors.intro_actors.actors_communication.AccountNumber
 import module1.akka_actors.intro_actors.change_behaviour.Worker.WorkerProtocol.{StandBy, Start, Stop}
-import module1.akka_actors.intro_actors.handle_state.Counter.CounterProtocol.{Inc}
+import module1.akka_actors.intro_actors.handle_state.Counter.CounterProtocol.{GetCounter, Inc}
 
 
 
@@ -32,14 +33,30 @@ object intro_actors{
 
   object behaviours_factory_methods {
     object Echo{
-      def apply(): Behavior[String] = ???
+      def apply(): Behavior[String] = Behaviors.setup{ctx =>
+        Behaviors.receiveMessage{
+          case msg =>
+            ctx.log.info(msg)
+            Behaviors.same
+        }
+      }
     }
   }
 
 
   object abstract_behaviour {
     object Echo {
-      def apply(): Behavior[String] = ???
+
+      def apply(): Behavior[String] = Behaviors.setup{ctx =>
+        new Echo(ctx)
+      }
+
+      class Echo(ctx: ActorContext[String]) extends AbstractBehavior[String](ctx){
+        override def onMessage(msg: String): Behavior[String] = {
+          ctx.log.info(msg)
+          this
+        }
+      }
     }
 
   }
@@ -63,10 +80,32 @@ object intro_actors{
 
       def apply(): Behavior[WorkerProtocol] = idle()
 
-      def idle(): Behavior[WorkerProtocol] = ???
-      def workInProgress(): Behavior[WorkerProtocol] = ???
+      def idle(): Behavior[WorkerProtocol] = Behaviors.setup{ctx =>
+        Behaviors.receiveMessage{
+          case msg @ Start =>
+            ctx.log.info(s"$msg")
+            workInProgress()
+          case msg @ StandBy =>
+            ctx.log.info(s"$msg")
+            idle()
+          case Stop =>
+            ctx.log.info("Остановка")
+            Behaviors.stopped
+        }
       }
-    }
+      def workInProgress(): Behavior[WorkerProtocol] = Behaviors.setup{ctx =>
+          Behaviors.receiveMessage{
+            case msg @ Start => Behaviors.unhandled
+            case msg @ StandBy =>
+              ctx.log.info(s"Заканчиваю работу")
+              idle()
+            case Stop =>
+              ctx.log.info("Остановка")
+              Behaviors.stopped
+          }
+        }
+      }
+  }
 
 
 
@@ -82,11 +121,21 @@ object intro_actors{
       sealed trait CounterProtocol
       object CounterProtocol{
         final case object Inc extends CounterProtocol
+        final case class GetCounter(replyTo: ActorRef[Int]) extends CounterProtocol
       }
 
-      def apply(init: Int): Behavior[CounterProtocol] = ???
+      def apply(init: Int): Behavior[CounterProtocol] = inc(init)
 
-      def inc: Behavior[CounterProtocol] = ???
+      def inc(counter: Int): Behavior[CounterProtocol] = Behaviors.setup{ctx =>
+        Behaviors.receiveMessage{
+          case Inc =>
+            ctx.log.info(s"Inc $counter")
+            inc(counter + 1)
+          case GetCounter(replyTo) =>
+            replyTo ! counter
+            Behaviors.same
+        }
+      }
     }
   }
 
@@ -107,9 +156,35 @@ object intro_actors{
       final case class Withdraw(from: AccountNumber, amount: Long) extends AccountOpsProtocol
       final case class GetBalance(of: AccountNumber) extends AccountOpsProtocol
       final case class Transfer(from: AccountNumber, to: AccountNumber, amount: Long) extends AccountOpsProtocol
+
       final case class AccountManagerProtocolWrapper(msg: AccountDispatcherResponseProtocol) extends AccountOpsProtocol
 
-      def apply(): Behavior[AccountOpsProtocol] = ???
+      def apply(): Behavior[AccountOpsProtocol] = Behaviors.setup{ ctx =>
+
+        val accountManager: ActorRef[AccountDispatcher.AccountDispatcherRequestProtocol] =
+          ctx.spawn(AccountDispatcher(), "account-manager")
+
+        val adapter: ActorRef[AccountDispatcherResponseProtocol] =
+          ctx.messageAdapter[AccountDispatcherResponseProtocol](msg => AccountManagerProtocolWrapper(msg))
+
+        Behaviors.receiveMessage {
+          case Withdraw(from, amount) =>
+            ctx.log.info(s"Withdraw $from $amount")
+            accountManager ! AccountDispatcher.Withdraw(from, amount, adapter)
+            Behaviors.same
+          case GetBalance(of) =>
+            ctx.log.info(s"GetBalance $of")
+            accountManager ! AccountDispatcher.GetBalance(of, adapter)
+            Behaviors.same
+          case Transfer(from, to, amount) =>
+            ctx.log.info(s"Transfer $from $to $amount")
+            accountManager ! AccountDispatcher.Transfer(from, to, amount, adapter)
+            Behaviors.same
+          case AccountManagerProtocolWrapper(b @ AccountDispatcher.Balance(of, amount)) =>
+            ctx.log.info(s"AccountOpsSupervisor $b")
+            Behaviors.same
+        }
+      }
 
 
     }
@@ -126,7 +201,37 @@ object intro_actors{
       final case class Balance(of: AccountNumber, amount: Long) extends AccountDispatcherResponseProtocol
 
 
-      def apply(): Behavior[AccountDispatcherRequestProtocol] = ???
+      def apply(): Behavior[AccountDispatcherRequestProtocol] = Behaviors.setup{ ctx =>
+        val account1 = ctx.spawn(AccountHandler(10000L), "account-1")
+
+        // Создаем адаптер для обработки ответов от Account
+        def accountAdapter(replyTo: ActorRef[AccountDispatcherResponseProtocol]) =
+          ctx.messageAdapter[AccountResponseProtocol](AccountResponseWrapper(_, replyTo))
+
+        Behaviors.receiveMessage {
+          case w@Withdraw(from, amount, replyTo) =>
+            ctx.log.info(s"AccountDispatcher - $w")
+            account1 ! AccountHandler.Withdraw(from, amount, accountAdapter(replyTo))
+            Behaviors.same
+          case t@Transfer(from, to, amount, replyTo) =>
+            ctx.log.info(s"AccountDispatcher - $t")
+            Behaviors.same
+          case g@GetBalance(of, replyTo) =>
+            ctx.log.info(s"AccountDispatcher - $g")
+            account1 ! AccountHandler.GetBalance(of, accountAdapter(replyTo))
+            Behaviors.same
+          case AccountResponseWrapper(msg, replyTo) => msg match {
+            case s@AccountHandler.OperationSuccess(balance, from) =>
+              ctx.log.info(s"AccountDispatcher - $s")
+              replyTo ! Balance(from, balance)
+              Behaviors.same
+            case f@AccountHandler.OperationFailure(balance, from) =>
+              ctx.log.info(s"AccountDispatcher - $f")
+              replyTo ! Balance(from, balance)
+              Behaviors.same
+          }
+        }
+      }
     }
   }
 
@@ -142,9 +247,22 @@ object intro_actors{
 
 
 
-    def apply(initBalance: Long): Behavior[AccountProtocol] = ???
+    def apply(initBalance: Long): Behavior[AccountProtocol] = default(initBalance)
 
-    def default(balance: Long): Behavior[AccountProtocol] = ???
+    def default(balance: Long): Behavior[AccountProtocol] = Behaviors.setup{ ctx =>
+
+      Behaviors.receiveMessage{
+        case Withdraw(from, amount, replyTo) =>
+          val newBalance = balance - amount
+          replyTo ! OperationSuccess(newBalance, from)
+          default(newBalance)
+        case GetBalance(of, replyTo) =>
+          replyTo ! OperationSuccess(balance, of)
+          default(balance)
+        case Transfer(from, to, amount, replyTo) =>
+          default(balance)
+      }
+    }
   }
 
 
