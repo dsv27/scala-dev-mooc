@@ -1,13 +1,13 @@
-package module1.akka_actors
+package module2.akka_actors
 
 import akka.actor.typed.scaladsl.AbstractBehavior
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior, MessageAdaptionFailure, PostStop, PreRestart, SpawnProtocol, SupervisorStrategy}
-import module1.akka_actors.intro_actors.AccountHandler.AccountResponseProtocol
-import module1.akka_actors.intro_actors.actors_communication.AccountDispatcher.AccountDispatcherResponseProtocol
-import module1.akka_actors.intro_actors.actors_communication.AccountNumber
-import module1.akka_actors.intro_actors.change_behaviour.Worker.WorkerProtocol.{StandBy, Start, Stop}
-import module1.akka_actors.intro_actors.handle_state.Counter.CounterProtocol.{GetCounter, Inc}
+import module2.akka_actors.intro_actors.AccountHandler.AccountResponseProtocol
+import module2.akka_actors.intro_actors.actors_communication.AccountDispatcher.AccountDispatcherResponseProtocol
+import module2.akka_actors.intro_actors.actors_communication.AccountNumber
+import module2.akka_actors.intro_actors.change_behaviour.Worker.WorkerProtocol.{StandBy, Start, Stop}
+import module2.akka_actors.intro_actors.handle_state.Counter.CounterProtocol.{GetCounter, Inc}
 
 
 
