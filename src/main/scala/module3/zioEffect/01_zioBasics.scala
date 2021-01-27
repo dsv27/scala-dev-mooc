@@ -1,7 +1,8 @@
-package module3.zioEffect
+package module3.zioMonad
 
 import java.io.IOException
 
+import module3.zioMonad.toyModel.ZIO.fail
 import zio.clock.Clock
 import zio.console.{Console, getStrLn, putStrLn}
 import zio.{IO, RIO, Task, UIO, URIO, ZIO}
@@ -28,38 +29,51 @@ object toyModel {
   final case class ZIO[-R, +E, +A](run: R => Either[E, A]) {
     self =>
 
-    def map[B](f: A => B) = ???
+    def map[B](f: A => B): ZIO[R, E, B]  = ZIO(r => self.run(r).map(f))
 
-    def flatMap[R1 <: R, E1 >: E, B](f: A => ZIO[R1, E1, B]) = ???
+    def flatMap[R1 <: R, E1 >: E, B](f: A => ZIO[R1, E1, B]): ZIO[R1, E1, B] = ZIO(
+      r => self.run(r).fold(ZIO.fail, f).run(r)
+    )
 
   }
 
   object ZIO {
 
-    def effect[A](e: => A) = ???
+    def effect[A](a: => A): ZIO[Any, Throwable, A] = {
+      try {
+        ZIO(_ => Right(a))
+      } catch { case e =>
+        ZIO(_ =>Left(e))
+      }
+    }
 
-    def fail[E](e: E) = ???
+    def fail[E](e: E): ZIO[Any, E, Nothing] = ZIO(_ => Left(e))
 
   }
 
   /** *
    * Напишите консольное echo приложение с помощью нашего игрушечного ZIO
    */
-  val app: ZIO[Any, Throwable, Unit] = ???
+  val app: ZIO[Any, Throwable, Unit] = for{
+    str <- ZIO.effect(StdIn.readLine())
+    _ <- ZIO.effect(println(str))
+  } yield ()
+
+
 
 }
 
 object zioConstructors {
 
-  val _: ZIO[Any, Nothing, Int] = ???
+  val _: ZIO[Any, Nothing, Int] = ZIO.succeed(7)
 
-  val _: ZIO[Any, Throwable, Int] = ???
+  val _: ZIO[Any, Throwable, Int] = ZIO.effect(7/0)
 
-  val _: ZIO[Any, Nothing, Unit] = ???
+  val _: ZIO[Any, Nothing, Unit] = ZIO.effectTotal(println(""))
 
   val f: Future[Int] = ???
 
-  val _: ZIO[Any, Throwable, Int] = ???
+  val _: ZIO[Any, Throwable, Int] = ZIO.fromFuture(ec => f)
 
   val _: ZIO[Any, String, Int] = ???
 
@@ -73,7 +87,7 @@ object zioConstructors {
 
   val _: ZIO[Any, Nothing, Nothing] = ZIO.die(new Throwable("Died"))
 
-  val _: ZIO[Any, String, Nothing] = ZIO.fail("Oh no")
+  val _: ZIO[Any, String, Nothing] = ZIO.fail(7)
 
 }
 
