@@ -15,5 +15,7 @@ libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3"
 
 libraryDependencies += "dev.zio" %% "zio-macros" % "1.0.3"
 
+libraryDependencies += "org.typelevel" %% "cats-effect" % "2.3.1"
+
 scalacOptions += "-Ymacro-annotations"
 

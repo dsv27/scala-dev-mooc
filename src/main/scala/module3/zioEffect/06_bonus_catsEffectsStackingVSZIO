@@ -1,0 +1,44 @@
+package module3.zioEffect
+
+import cats.data.{OptionT, ReaderT}
+import cats.effect
+import cats.effect.IO
+import zio.ZIO
+
+object monadTransformersVsZIO {
+
+  /**
+   * Цель рассмотреть мотивацию за тайп параметрами в ZIO с практической стороны.
+   * Сравнить операции в над эффектами в cats и ZIO
+   */
+
+  trait Repo {
+    def getStringA: cats.effect.IO[Option[String]]
+
+    def getStringB: cats.effect.IO[String]
+
+    def put(string: String): Unit
+  }
+
+  trait Repo2 {
+    def getStringA: ZIO[Any, Throwable, Option[String]]
+
+    def getStringB: zio.Task[String]
+
+    def put(string: String): Unit
+  }
+
+  type C[A] = OptionT[effect.IO, A]
+
+  class Service1 {
+    def getStrA: ReaderT[C, Repo, String] = ReaderT((r: Repo) => OptionT(r.getStringA))
+
+    def getStrA2: ReaderT[effect.IO, Repo, Option[String]] = ReaderT((r: Repo) => r.getStringA)
+
+    def getStrB: ReaderT[effect.IO, Repo, String] = ReaderT((r: Repo) => r.getStringB)
+
+  }
+
+
+
+}
