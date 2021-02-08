@@ -4,8 +4,10 @@ import java.io.IOException
 
 import module3.zioResourceManagement.tryFinally.zioBracket
 import module3.zioResourceManagement.tryFinally.zioBracket.{File, handleFile}
-import zio.{URIO, ZIO, ZManaged}
-import zio.console.Console
+import zio.{Exit, Reservation, Task, URIO, ZIO, ZManaged}
+import zio.console.{Console, putStrLn}
+
+import scala.io.Source
 
 object toyZManaged{
 
@@ -53,16 +55,57 @@ object toyZManaged{
 }
 
 object zioZManaged{
-  // Создание
-  import zioBracket._
+
   lazy val file1: ZManaged[Any, IOException, File] =  ???
   lazy val file2: ZManaged[Any, IOException, File] =  ???
 
   // Комбинирование
-  lazy val combined: ZIO[Console, IOException, List[Unit]] = ???
+  lazy val combined: ZManaged[Any, IOException, (File, File)] = ???
+  lazy val combined2: ZManaged[Any, IOException, (File, File)] = ???
+
+  lazy val fileNames: List[String] = ???
+
+  def file(name: String): ZManaged[Any, IOException, File] = ???
+
+  lazy val files: ZManaged[Any, IOException, List[File]] = ???
+  lazy val files2: ZManaged[Any, IOException, List[File]] = ???
 
 
   // Использование
 
+  def processFiles(file: File *): Task[Unit] = ???
+  def processFiles2(file: java.io.File *): Task[Unit] = ???
+
+  lazy val r1: ZIO[Any, Throwable, Unit] = ???
+
+  lazy val r2: ZIO[Any, Throwable, Unit] = ???
+
+  lazy val files3: ZManaged[Any, IOException, List[java.io.File]] = ???
+
+  /**
+   * Прочитать строчки из файла и вернуть список этих строк
+   */
+  lazy val r3: Task[List[String]] = ???
+
+  /**
+   * Эффект описывающий чтение списка файлов с заданным паралелизмом
+   */
+  lazy val filesN: ZManaged[Any, Throwable, List[File]] = ???
+
+
+  // Конструирование
+
+  lazy val eff1: Task[Int] = ???
+
+  // Из эффекта
+  lazy val m1: ZManaged[Any, Throwable, Int] = ???
+
+  // микс ZManaged и ZIO
+  lazy val m2 = ???
+
+  //Еще несколько вариантов использования
+  val _: ZIO[Console, Throwable, Unit] = ???
+
+  val _: ZIO[Console, IOException, Unit] = ???
 
 }

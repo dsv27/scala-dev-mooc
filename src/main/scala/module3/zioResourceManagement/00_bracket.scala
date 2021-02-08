@@ -29,7 +29,14 @@ object tryFinally {
      *
      */
 
-    lazy val result1 = ???
+    lazy val result1 = {
+      val resource = acquireResource
+      try {
+        use(resource)
+      } finally {
+        releaseResource(resource)
+      }
+    }
   }
 
 
@@ -50,13 +57,17 @@ object tryFinally {
      *
      */
     implicit class FutureOps[+A](future: Future[A]){
-      def ensuring(finalizer: Future[Any]): Future[A] = ???
+
+      def ensuring(finalizer: Future[Any]): Future[A] = future.transformWith {
+        case Failure(exception) => finalizer.flatMap(_ => Future.failed(exception))
+        case Success(value) => finalizer.flatMap(_ => Future.successful(value))
+      }
     }
 
     /**
      * Написать код, который получит ресурс, воспользуется им и освободит
      */
-     lazy val result2 = ???
+     lazy val result2 = acquireFutureResource.flatMap(r => use(r).ensuring(releaseResource(r)))
 
   }
 
@@ -82,29 +93,38 @@ object tryFinally {
      * реалтзовать ф-цию, которая будет описывать открытие файла с помощью ZIO эффекта
      */
 
-     def openFile(fileName: String): IO[IOException, File] = ???
-     def openFile(fileName: String, lines: List[String]): IO[IOException, File] = ???
+     def openFile(fileName: String): IO[IOException, File] = ZIO.fromEither(Right(File("")))
+
+     def openFile(fileName: String, lines: List[String]): IO[IOException, File] =
+       ZIO.fromEither(Right(File("test1", lines)))
 
     /**
      * реалтзовать ф-цию, которая будет описывать закрытие файла с помощью ZIO эффекта
      */
 
-     def closeFile(file: File): UIO[Unit] = ???
+     def closeFile(file: File): UIO[Unit] = URIO(file.close)
 
     /**
      * Написать эффект, котрый прочитает строчки из файла и выведет их в консоль
      */
 
-      def handleFile(file: File) = ???
+      def handleFile(file: File): ZIO[Console, Nothing, List[Unit]] =
+        ZIO.foreach(file.readLines)(l => putStrLn(l))
 
 
 
 
     /**
-     * Написать эффект, который откроет 2 файла, прочитает из них строчки, выведет их в консоль и корректно закроет оба файла
+     * Написать эффект, который откроет 2 файла, прочитает из них строчки,
+     * выведет их в консоль и корректно закроет оба файла
      */
 
-     val twoFiles = ???
+     val twoFiles: ZIO[Console, IOException, List[Unit]] =
+       ZIO.bracket(openFile("test1"))(closeFile){ f1 =>
+        ZIO.bracket(openFile("test2"))(closeFile){ f2 =>
+          handleFile(f1) *> handleFile(f2)
+        }
+     }
 
     /**
      * Рефакторинг выше написанного кода

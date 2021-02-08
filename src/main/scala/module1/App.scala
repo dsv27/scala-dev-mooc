@@ -4,7 +4,6 @@ import java.io.IOException
 
 import module3.zioEffect.{catsIOvsZIO, functionalProgram, simpleProgram, zioConcurrency, zioErrorHandling}
 import module3.zioMonad.{toyModel, zioOperators, zioRecursion}
-import module3.zioResourceManagement.tryFinally.{toyZManaged, zioBracket, zioZManaged}
 import org.slf4j.LoggerFactory
 import zio.Cause.{Die, Fail}
 import zio.{Exit, IO, RIO, Task, ZIO, clock, console}
@@ -28,7 +27,7 @@ object App {
 
   def main(args: Array[String]): Unit = {
 
-    // zio.Runtime.default.unsafeRun(???)
+     // zio.Runtime.default.unsafeRun(???)
 
 //    Thread.sleep(10000)
   }
