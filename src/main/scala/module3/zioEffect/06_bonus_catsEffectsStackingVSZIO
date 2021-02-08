@@ -3,7 +3,7 @@ package module3.zioEffect
 import cats.data.{OptionT, ReaderT}
 import cats.effect
 import cats.effect.IO
-import zio.ZIO
+import zio.{Task, ZIO}
 
 object monadTransformersVsZIO {
 
@@ -39,6 +39,17 @@ object monadTransformersVsZIO {
 
   }
 
+  case class ReaderT[F[_], -R, B](run: R => F[B]){
+    def provide[R](r: R): F[B] = run(r)
+  }
+
+  case class ReaderT[-R, B](run: R => Task[B]){
+    def provide[R](r: R): Task[B] = run(r)
+  }
+
+  object ReaderT {
+    def environment[R]: Task[R] = ???
+  }
 
 
 }
