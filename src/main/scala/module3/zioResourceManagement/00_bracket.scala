@@ -129,7 +129,16 @@ object tryFinally {
     /**
      * Рефакторинг выше написанного кода
      */
+     def withFile[R, A](name: String)(use: File => RIO[R, A]): ZIO[R, Throwable, A] =
+       openFile(name).bracket(closeFile)(use)
 
+
+    val twoFiles2: ZIO[Console, Throwable, List[Unit]] =
+      withFile("f1"){ f1 =>
+        withFile("f2"){ f2 =>
+          handleFile(f1) *> handleFile(f2)
+        }
+      }
 
 
   }
