@@ -24,10 +24,7 @@ object toyZManaged{
 
     def map[B](f: A => B): ZManaged[R, E, B] = ???
 
-    def flatMap[R1 <: R, E1 >: E, B](f: A => ZManaged[R1, E1, B]): ZManaged[R1, E1, B] = ZManaged(
-      self.acquire.flatMap(v => f(v).acquire),
-      _ => self.use(a => self.release(a)).orDieWith(_ => new Throwable(""))
-    )
+    def flatMap[R1 <: R, E1 >: E, B](f: A => ZManaged[R1, E1, B]): ZManaged[R1, E1, B] = ???
 
     def zip[R1 <: R, E1 >: E, B](that: ZManaged[R1, E1, B]): ZManaged[R1, E1, (A, B)] = ???
 

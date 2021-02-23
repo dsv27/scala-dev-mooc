@@ -2,6 +2,7 @@ package module1
 
 import java.io.IOException
 
+import module3.homework
 import module3.zioEffect.{catsIOvsZIO, functionalProgram, simpleProgram, zioConcurrency, zioErrorHandling}
 import module3.zioMonad.{toyModel, zioOperators, zioRecursion}
 import module3.zioService.{dbService, userService}
@@ -31,14 +32,11 @@ object App {
 
   def main(args: Array[String]): Unit = {
 
-    val app: ZIO[Console with DbService, String, Unit] = for {
-      result <- ZIO.accessM[dbService.DbService](_.get.tx("Hello world"))
-      _ <- putStrLn(result)
-    } yield ()
 
-    zio.Runtime.default.unsafeRun(userService.app.provideSomeLayer[Console](userService.appLayer))
 
-//    Thread.sleep(10000)
+//    zio.Runtime.default.unsafeRun(???)
+
+//    Thread.sleep(2000)
   }
 }
 
