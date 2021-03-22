@@ -77,10 +77,6 @@ object zioConstructors {
 
   val _: ZIO[Any, Throwable, Int] = ZIO.fromFuture(ec => f)
 
-  val _: ZIO[Any, String, Int] = ???
-
-  val _: ZIO[Any, Throwable, Int] = ???
-
   ZIO.unit
 
   ZIO.none

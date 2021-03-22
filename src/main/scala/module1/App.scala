@@ -1,7 +1,6 @@
 package module1
 
 import java.io.IOException
-
 import module3.homework
 import module3.zioEffect.{catsIOvsZIO, functionalProgram, simpleProgram, zioConcurrency, zioErrorHandling}
 import module3.zioMonad.{toyModel, zioOperators, zioRecursion}
@@ -13,7 +12,7 @@ import org.slf4j.LoggerFactory
 import zio.Cause.{Die, Fail}
 import zio.{Exit, IO, RIO, Task, ZIO, ZLayer, clock, console}
 import zio.clock.Clock
-import zio.console.{Console, putStrLn}
+import zio.console.{Console, putStr, putStrLn}
 import zio.duration.durationInt
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -31,12 +30,19 @@ object App {
   type Files
 
   def main(args: Array[String]): Unit = {
+//      functionalProgram.interpret(functionalProgram.consoleProgram)
+
+    val z = ZIO.effect(List[Int]()).fold(
+      ex => ex.getMessage,
+      v => v.head
+    )
+
+    lazy val zz: ZIO[Any, String, Option[Int]] = ???
 
 
 
-//    zio.Runtime.default.unsafeRun(???)
-
-//    Thread.sleep(2000)
+    zz.someOrElse(2)
+    zio.Runtime.default.unsafeRun(z)
   }
 }
 
