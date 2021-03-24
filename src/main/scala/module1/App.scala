@@ -8,6 +8,7 @@ import module3.zioService.{dbService, userService}
 import module3.zioService.dbService.DbService
 import module3.zioService.di.DBService
 import module3.zioService.userService.UserService
+import module5.abiturientService.abiturientRequestSaga.AbiturientRequestSaga
 import org.slf4j.LoggerFactory
 import zio.Cause.{Die, Fail}
 import zio.{Exit, IO, RIO, Task, ZIO, ZLayer, clock, console}
@@ -32,17 +33,7 @@ object App {
   def main(args: Array[String]): Unit = {
 //      functionalProgram.interpret(functionalProgram.consoleProgram)
 
-    val z = ZIO.effect(List[Int]()).fold(
-      ex => ex.getMessage,
-      v => v.head
-    )
-
-    lazy val zz: ZIO[Any, String, Option[Int]] = ???
-
-
-
-    zz.someOrElse(2)
-    zio.Runtime.default.unsafeRun(z)
+    zio.Runtime.default.unsafeRun(AbiturientRequestSaga.saga2)
   }
 }
 

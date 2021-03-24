@@ -26,6 +26,7 @@ object AdmissionPlanApp extends App {
 
   val server: ZIO[AdmissionPlanAppEnv, Throwable, Unit] = for{
     cfg <- configuration.load
+    _ <- AbiturientRequestConsumer.consumeRequests.forkDaemon
     abiturientRoutes = new AdmissionPlanAPI[AdmissionPlanAppEnv]().routes
     httpApp = Router("" -> abiturientRoutes).orNotFound
     server <- ZIO.runtime[AdmissionPlanAppEnv].flatMap { implicit rts =>

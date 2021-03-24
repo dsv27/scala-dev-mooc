@@ -16,7 +16,8 @@ lazy val root = (project in file("."))
     libraryDependencies ++= Seq(
       Dependencies.akka,
       Dependencies.logback,
-      Dependencies.jacksonDatabind
+      Dependencies.jacksonDatabind,
+      Dependencies.zioSaga
     ),
     addCompilerPlugin(Dependencies.kindProjector)
   )

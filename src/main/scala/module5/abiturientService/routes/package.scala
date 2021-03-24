@@ -6,6 +6,8 @@ import module5.abiturientService.configuration.Configuration
 import module5.abiturientService.dtos.AdmissionPlanResponse.AbiturientRequestAccepted
 import module5.abiturientService.dtos.{AbiturientRequestDTO, AdmissionPlanResponse}
 import module5.abiturientService.httpClient.HttpClient
+import module5.abiturientService.services.AbiturientRequestTopic
+import module5.abiturientService.services.AbiturientRequestTopic.AbiturientRequestTopic
 import module5.addmissionPlanService.AbiturientRequest
 import module5.addmissionPlanService.ZioAddmissionPlanService.AdmissionPlanAPIClient
 import module5.authService.AuthRequest
@@ -26,7 +28,7 @@ import zio.{Has, RIO, Task, ZIO, ZLayer}
 
 
 package object routes {
-  type APIEnv = Configuration with HttpClient with Clock with AdmissionPlanAPIClient with Console with AuthServiceAPIClient with Blocking
+  type APIEnv = Configuration with HttpClient with Clock with AdmissionPlanAPIClient with Console with AuthServiceAPIClient with Blocking with AbiturientRequestTopic
 
   final class AbiturientAPI[R <: APIEnv]{
 
@@ -83,7 +85,7 @@ package object routes {
       case req @ POST -> Root / "api" / "v3" / "abiturient" =>
         req.decode[AbiturientRequestDTO] { abiturientRequestDTO =>
 
-          val resp: AbiturientAPITask[Unit] = ???
+          val resp = AbiturientRequestTopic.send(abiturientRequestDTO)
 
           resp.foldM(ex => InternalServerError(ex.getCause.getMessage), r =>
             Ok(r.toString)

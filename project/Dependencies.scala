@@ -63,4 +63,6 @@ object Dependencies {
   lazy val kindProjector = "org.typelevel" %% "kind-projector" % KindProjectorVersion
 
   lazy val jacksonDatabind = "com.fasterxml.jackson.core" % "jackson-databind" % "2.10.2"
+  lazy val zioSaga = "com.vladkopanev" %% "zio-saga-core" % "0.4.0"
+
 }

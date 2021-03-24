@@ -4,6 +4,8 @@ import cats.effect.{ExitCode => CatsExitCode}
 import module5.abiturientService.configuration.Configuration
 import module5.abiturientService.grpcClient.{admissionPlanServiceClient, authServiceClient}
 import module5.abiturientService.routes.AbiturientAPI
+import module5.abiturientService.services.AbiturientRequestTopic
+import module5.abiturientService.services.AbiturientRequestTopic.AbiturientRequestTopic
 import module5.addmissionPlanService.ZioAddmissionPlanService.AdmissionPlanAPIClient
 import module5.authService.ZioAuthService.AuthServiceAPIClient
 import org.http4s.implicits._
@@ -18,12 +20,14 @@ import zio.{RIO, ZIO, _}
 object AbiturientApp extends App{
 
 
-  type AbiturientAppEnv = Configuration with Clock with httpClient.HttpClient with AdmissionPlanAPIClient with AuthServiceAPIClient with Console with Blocking
+  type AbiturientAppEnv = Configuration with Clock with httpClient.HttpClient with AbiturientRequestTopic with AdmissionPlanAPIClient
+    with AuthServiceAPIClient with Console with Blocking
+
   type AppTask[A] = RIO[AbiturientAppEnv, A]
 
 
 
-  val abiturientAppEnv = Configuration.live ++ httpClient.HttpClient.live ++ admissionPlanServiceClient.live ++ authServiceClient.live
+  val abiturientAppEnv = Configuration.live ++ httpClient.HttpClient.live ++ admissionPlanServiceClient.live ++ authServiceClient.live ++ AbiturientRequestTopic.live
 
   val server: ZIO[AbiturientAppEnv, Throwable, Unit] = for{
     cfg <- configuration.load
